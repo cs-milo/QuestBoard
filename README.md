@@ -1,5 +1,13 @@
-# QuestBoard
-QuestBoard is a lightweight game community hub where players can track games, create “quests” (goals/challenges), and share session notes. Think of it as a personal backlog and progress tracker with simple social features. The app focuses on clean MVC structure, EF Core modeling, diagnostics, and deployment-friendly practices.
+🎮 QuestBoard
+
+A Player’s Journal for Games, Goals, and Progress
+
+Project Summary
+
+QuestBoard is a web app built with ASP.NET Core MVC that lets players track their gaming goals, progress, and play sessions in one place.
+It’s designed as both a lightweight productivity tool for gamers and a demonstration of clean architecture, data modeling, dependency injection, CRUD functionality, logging, diagnostics, and cloud deployment.
+
+Over the course of several weeks, the app evolves from a basic EF Core data model into a full-featured MVC application with structured logging, health checks, and a final deployment to Azure App Service. The project showcases modern web development practices using C#, Razor Views, and Entity Framework Core.
 
 Planning Table:
 | **Week** | **Concept**                        | **Feature**                                                                     | **Goal**                                                              | **Acceptance Criteria**                                                                                                                             | **Evidence in README.md**                                                                                                     | **Test Plan**                                                                                                                 |
