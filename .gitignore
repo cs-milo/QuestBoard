@@ -1,0 +1,22 @@
+﻿# Ignore Visual Studio temporary files, build results, and cache
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Ignore build and publish outputs
+**/bin/
+**/obj/
+*.dll
+*.exe
+*.log
+*.dbmdl
+*.pdb
+*.cache
+
+# Ignore environment-specific files
+.env
+*.local.json

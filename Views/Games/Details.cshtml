@@ -1,0 +1,20 @@
+﻿@model QuestBoard.Models.Game
+@{
+    ViewData["Title"] = "Game Details";
+    Layout = null;
+}
+<h1>Game Details</h1>
+
+<dl>
+    <dt>Name</dt>
+    <dd>@Model.Name</dd>
+    <dt>Genre</dt>
+    <dd>@Model.Genre</dd>
+    <dt>Created</dt>
+    <dd>@Model.CreatedAt</dd>
+</dl>
+
+<p>
+    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</p>

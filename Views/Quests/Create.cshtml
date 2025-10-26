@@ -1,0 +1,44 @@
+﻿@model QuestBoard.Models.Quest
+@{
+    ViewData["Title"] = "Create Quest";
+    Layout = null;
+}
+<h1>Create Quest</h1>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+    <div>
+        <label asp-for="Title"></label>
+        <input asp-for="Title" />
+        <span asp-validation-for="Title"></span>
+    </div>
+    <div>
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description"></textarea>
+        <span asp-validation-for="Description"></span>
+    </div>
+    <div>
+        <label asp-for="RewardGold"></label>
+        <input asp-for="RewardGold" type="number" />
+        <span asp-validation-for="RewardGold"></span>
+    </div>
+    <div>
+        <label asp-for="Difficulty"></label>
+        <input asp-for="Difficulty" />
+        <span asp-validation-for="Difficulty"></span>
+    </div>
+    <div>
+        <label asp-for="GameId">Game</label>
+        <select asp-for="GameId" asp-items="@(ViewData["GameId"] as SelectList)">
+            <option value="">-- select a game --</option>
+        </select>
+        <span asp-validation-for="GameId"></span>
+    </div>
+
+    <button type="submit">Save</button>
+    <a asp-action="Index">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

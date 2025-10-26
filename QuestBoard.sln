@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36518.9 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuestBoard", "QuestBoard.csproj", "{201AA50C-D951-4FE6-B2F2-C141AA25A70F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{201AA50C-D951-4FE6-B2F2-C141AA25A70F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{201AA50C-D951-4FE6-B2F2-C141AA25A70F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{201AA50C-D951-4FE6-B2F2-C141AA25A70F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{201AA50C-D951-4FE6-B2F2-C141AA25A70F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {64E394F6-4CF8-439B-8FE4-569EC5C7F1CB}
+	EndGlobalSection
+EndGlobal

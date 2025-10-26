@@ -1,0 +1,24 @@
+﻿@model IEnumerable<QuestBoard.Models.Game>
+@{
+    ViewData["Title"] = "Games";
+}
+<h1>Games</h1>
+<p><a class="btn btn-primary" href="/Games/Create">Create New</a></p>
+<table class="table">
+    <thead><tr><th>Name</th><th>Genre</th><th>Created</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var g in Model)
+        {
+            <tr>
+                <td>@g.Name</td>
+                <td>@g.Genre</td>
+                <td>@g.CreatedAt</td>
+                <td>
+                    <a href="/Games/Details/@g.Id">Details</a> |
+                    <a href="/Games/Edit/@g.Id">Edit</a> |
+                    <a href="/Games/Delete/@g.Id">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

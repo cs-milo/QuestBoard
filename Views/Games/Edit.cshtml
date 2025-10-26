@@ -1,0 +1,28 @@
+﻿@model QuestBoard.Models.Game
+@{
+    ViewData["Title"] = "Edit Game";
+    Layout = null;
+}
+<h1>Edit Game</h1>
+
+<form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <div>
+        <label asp-for="Name"></label>
+        <input asp-for="Name" />
+        <span asp-validation-for="Name"></span>
+    </div>
+    <div>
+        <label asp-for="Genre"></label>
+        <input asp-for="Genre" />
+        <span asp-validation-for="Genre"></span>
+    </div>
+    <div>
+        <label asp-for="CreatedAt"></label>
+        <input asp-for="CreatedAt" type="datetime-local" />
+        <span asp-validation-for="CreatedAt"></span>
+    </div>
+    <button type="submit">Save</button>
+    <a asp-action="Index">Cancel</a>
+</form>

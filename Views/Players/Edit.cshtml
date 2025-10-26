@@ -1,0 +1,47 @@
+﻿@model QuestBoard.Models.Player
+
+@{
+    ViewData["Title"] = "Edit Player";
+}
+
+<h2>Edit Player</h2>
+<hr />
+
+<form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="form-group">
+        <label asp-for="Name" class="control-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Class" class="control-label"></label>
+        <input asp-for="Class" class="form-control" />
+        <span asp-validation-for="Class" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Level" class="control-label"></label>
+        <input asp-for="Level" class="form-control" type="number" />
+        <span asp-validation-for="Level" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="GameId" class="control-label">Game</label>
+        <select asp-for="GameId" asp-items="@(ViewData["GameId"] as SelectList)" class="form-control"></select>
+        <span asp-validation-for="GameId" class="text-danger"></span>
+    </div>
+
+    <input type="hidden" asp-for="Id" />
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

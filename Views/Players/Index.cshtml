@@ -1,0 +1,25 @@
+﻿@model IEnumerable<QuestBoard.Models.Player>
+@{
+    ViewData["Title"] = "Players";
+}
+<h1>Players</h1>
+<p><a class="btn btn-primary" href="/Players/Create">Create New</a></p>
+<table class="table">
+    <thead><tr><th>Name</th><th>Class</th><th>Level</th><th>Game</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Name</td>
+                <td>@p.Class</td>
+                <td>@p.Level</td>
+                <td>@p.Game?.Name</td>
+                <td>
+                    <a href="/Players/Details/@p.Id">Details</a> |
+                    <a href="/Players/Edit/@p.Id">Edit</a> |
+                    <a href="/Players/Delete/@p.Id">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

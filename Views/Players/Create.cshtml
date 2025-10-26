@@ -1,0 +1,39 @@
+﻿@model QuestBoard.Models.Player
+@{
+    ViewData["Title"] = "Create Player";
+    Layout = null;
+}
+<h1>Create Player</h1>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+    <div>
+        <label asp-for="Name"></label>
+        <input asp-for="Name" />
+        <span asp-validation-for="Name"></span>
+    </div>
+    <div>
+        <label asp-for="Class"></label>
+        <input asp-for="Class" />
+        <span asp-validation-for="Class"></span>
+    </div>
+    <div>
+        <label asp-for="Level"></label>
+        <input asp-for="Level" type="number" />
+        <span asp-validation-for="Level"></span>
+    </div>
+    <div>
+        <label asp-for="GameId">Game</label>
+        <select asp-for="GameId" asp-items="@(ViewData["GameId"] as SelectList)">
+            <option value="">-- select a game --</option>
+        </select>
+        <span asp-validation-for="GameId"></span>
+    </div>
+
+    <button type="submit">Save</button>
+    <a asp-action="Index">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -19,3 +19,10 @@ Planning Table:
 | **14**   | **Logging**                        | Add structured logs for quest creation and session activity                     | Trace user actions and app behavior for diagnostics                   | ✅ `ILogger` logs Information for Create/Edit/Delete <br>✅ Log includes `QuestId`, `PlayerId`, `GameId` and timestamp                                | Log output screenshot + code snippet showing logger usage; explanation of log levels (Information, Warning, Error)            | Manual test: perform Create/Edit/Delete actions and verify log entries in Output window or console                            |
 | **15**   | **Stored Procedures**              | Call stored procedure “Top 5 Games by Hours Played”                             | Generate a server-side leaderboard query using SQL SP for performance | ✅ Stored procedure executes successfully <br>✅ Mapped to a ViewModel <br>✅ Results render on a Leaderboard page                                     | Screenshot of SP result and EF Core execution snippet; short write-up comparing SP vs LINQ performance                        | Compare SP output to LINQ query results on same dataset for validation                                                        |
 | **16**   | **Deployment (Azure App Service)** | Deploy QuestBoard to Azure App Service with CI/CD                               | Make the app publicly accessible and maintainable                     | ✅ Azure App Service created <br>✅ App builds and runs in cloud <br>✅ `/healthz` reachable online <br>✅ At least one functional page works           | Screenshot of live URL and `/healthz` response; deployment notes in README; GitHub Actions config snippet                     | Visit public URL; confirm home page and `/healthz` load successfully; verify logs from production App Service                 |
+
+
+---
+
+### Week 10 Deliverable
+📘 **Entity Framework Core integration (model, DbContext, migration, and evidence):**  
+➡️ [Open the Week 10 README](README.week10.md)
