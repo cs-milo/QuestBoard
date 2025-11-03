@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QuestBoard.Models;
+using QuestBoard.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,8 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<QuestBoardContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Week 11: register the service with Scoped lifetime
+builder.Services.AddScoped<IPlayerService, PlayerService>();
 
 // 3️⃣ Build the app AFTER services are registered
 var app = builder.Build();
