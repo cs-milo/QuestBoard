@@ -18,3 +18,8 @@ Evidence:
 - DI: `Program.cs` (AddScoped)
 - Controller usage: `Controllers/PlayersController.cs`
 - UI Entry: `Views/Players/Index.cshtml`
+
+Screenshots:
+- ![Player Index](docs/week11/PlayerIndexCode.png)
+- ![Registration](docs/week11/RegistrationAdded.png)
+- ![Top N Players](docs/week11/Top3Proof.png)
