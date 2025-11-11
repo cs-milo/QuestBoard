@@ -12,59 +12,67 @@ namespace QuestBoard.Services
             _db = db;
         }
 
-        public async Task<List<Player>> GetAllAsync()
+        // ---------- Basic list with optional search ----------
+        public async Task<List<Player>> GetListAsync(string? search = null)
         {
-            return await _db.Players
-                .Include(p => p.Game)
-                .AsNoTracking()
-                .ToListAsync();
+            var q = _db.Players.Include(p => p.Game).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                q = q.Where(p =>
+                    p.Name.Contains(search) ||
+                    (p.Class ?? "").Contains(search) ||
+                    (p.Handle ?? "").Contains(search) ||
+                    (p.Game != null && p.Game.Name.Contains(search)));
+            }
+
+            return await q.OrderBy(p => p.Name).ToListAsync();
         }
 
-        public async Task<Player?> GetByIdAsync(int id)
-        {
-            return await _db.Players
-                .Include(p => p.Game)
-                .Include(p => p.PlayerQuests).ThenInclude(pq => pq.Quest)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == id);
-        }
+        // ---------- Single fetch used by older code ----------
+        public Task<Player?> GetAsync(int id) =>
+            _db.Players.Include(p => p.Game).FirstOrDefaultAsync(p => p.Id == id);
 
-        public async Task CreateAsync(Player player)
+        // ---------- Methods required by your controllers/views ----------
+        public Task<Player?> GetByIdAsync(int id) => GetAsync(id);
+
+        public Task<List<Player>> GetAllAsync() =>
+            _db.Players.Include(p => p.Game).OrderBy(p => p.Name).ToListAsync();
+
+        public Task<List<Player>> GetTopByLevelAsync(int count) =>
+            _db.Players
+               .Include(p => p.Game)
+               .OrderByDescending(p => (int?)p.Level ?? 0)
+               .ThenBy(p => p.Name)
+               .Take(count)
+               .ToListAsync();
+
+        // ---------- CUD ----------
+        public async Task<Player> CreateAsync(Player player)
         {
             _db.Players.Add(player);
             await _db.SaveChangesAsync();
+            return player;
         }
 
-        public async Task UpdateAsync(Player player)
+        public async Task<bool> UpdateAsync(Player player)
         {
+            if (!await _db.Players.AnyAsync(p => p.Id == player.Id)) return false;
             _db.Players.Update(player);
             await _db.SaveChangesAsync();
+            return true;
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
-            var player = await _db.Players
-                .Include(p => p.PlayerQuests)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (player == null) return;
-
-            if (player.PlayerQuests?.Any() == true)
-                _db.PlayerQuests.RemoveRange(player.PlayerQuests);
-
-            _db.Players.Remove(player);
+            var entity = await _db.Players.FindAsync(id);
+            if (entity == null) return false;
+            _db.Players.Remove(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
 
-        public async Task<List<Player>> GetTopByLevelAsync(int count)
-        {
-            return await _db.Players
-                .Include(p => p.Game)
-                .OrderByDescending(p => p.Level)
-                .ThenBy(p => p.Name)
-                .Take(Math.Max(1, count))
-                .AsNoTracking()
-                .ToListAsync();
-        }
+        public Task<List<Game>> GetGamesAsync() =>
+            _db.Games.OrderBy(g => g.Name).ToListAsync();
     }
 }

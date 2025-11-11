@@ -1,23 +1,44 @@
-﻿@model IEnumerable<QuestBoard.Models.Quest>
+﻿@model IEnumerable<QuestBoard.ViewModels.QuestListItemViewModel>
 @{
     ViewData["Title"] = "Quests";
 }
 <h1>Quests</h1>
-<p><a class="btn btn-primary" href="/Quests/Create">Create New</a></p>
-<table class="table">
-    <thead><tr><th>Title</th><th>Difficulty</th><th>Reward</th><th>Game</th><th></th></tr></thead>
+
+<form method="get" class="mb-3 d-flex gap-2">
+    <input class="form-control" type="text" name="search" value="@((string?)ViewData["CurrentFilter"])" placeholder="Search by title, game, or player" />
+    <button class="btn btn-primary" type="submit">Search</button>
+    <a class="btn btn-outline-secondary" asp-action="Index">Clear</a>
+    <a class="btn btn-success ms-auto" asp-action="Create">New Quest</a>
+</form>
+
+@if (TempData["Status"] is string status)
+{
+    <div class="alert alert-success">@status</div>
+}
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Game</th>
+            <th>Player</th>
+            <th>Due (UTC)</th>
+            <th>Done?</th>
+            <th></th>
+        </tr>
+    </thead>
     <tbody>
         @foreach (var q in Model)
         {
             <tr>
                 <td>@q.Title</td>
-                <td>@q.Difficulty</td>
-                <td>@q.RewardGold</td>
-                <td>@q.Game?.Name</td>
-                <td>
-                    <a href="/Quests/Details/@q.Id">Details</a> |
-                    <a href="/Quests/Edit/@q.Id">Edit</a> |
-                    <a href="/Quests/Delete/@q.Id">Delete</a>
+                <td>@q.GameTitle</td>
+                <td>@q.PlayerName</td>
+                <td>@q.DueDateUtc?.ToString("yyyy-MM-dd")</td>
+                <td>@(q.IsCompleted ? "Yes" : "No")</td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@q.Id">Details</a>
+                    <a class="btn btn-sm btn-primary" asp-action="Edit" asp-route-id="@q.Id">Edit</a>
                 </td>
             </tr>
         }

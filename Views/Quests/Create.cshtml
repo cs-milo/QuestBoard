@@ -1,42 +1,47 @@
-﻿@model QuestBoard.Models.Quest
+﻿@model QuestBoard.ViewModels.QuestEditViewModel
 @{
     ViewData["Title"] = "Create Quest";
-    Layout = null;
 }
 <h1>Create Quest</h1>
 
-<form asp-action="Create" method="post">
-    @Html.AntiForgeryToken()
-    <div>
-        <label asp-for="Title"></label>
-        <input asp-for="Title" />
-        <span asp-validation-for="Title"></span>
-    </div>
-    <div>
-        <label asp-for="Description"></label>
-        <textarea asp-for="Description"></textarea>
-        <span asp-validation-for="Description"></span>
-    </div>
-    <div>
-        <label asp-for="RewardGold"></label>
-        <input asp-for="RewardGold" type="number" />
-        <span asp-validation-for="RewardGold"></span>
-    </div>
-    <div>
-        <label asp-for="Difficulty"></label>
-        <input asp-for="Difficulty" />
-        <span asp-validation-for="Difficulty"></span>
-    </div>
-    <div>
-        <label asp-for="GameId">Game</label>
-        <select asp-for="GameId" asp-items="@(ViewData["GameId"] as SelectList)">
-            <option value="">-- select a game --</option>
-        </select>
-        <span asp-validation-for="GameId"></span>
+<form asp-action="Create" method="post" novalidate>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
     </div>
 
-    <button type="submit">Save</button>
-    <a asp-action="Index">Cancel</a>
+    <div class="mb-3">
+        <label asp-for="GameId" class="form-label"></label>
+        <select asp-for="GameId" class="form-select" asp-items="Model.GameOptions">
+            <option value="">-- select a game --</option>
+        </select>
+        <span asp-validation-for="GameId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PlayerId" class="form-label"></label>
+        <select asp-for="PlayerId" class="form-select" asp-items="Model.PlayerOptions">
+            <option value="">-- select a player --</option>
+        </select>
+        <span asp-validation-for="PlayerId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="DueDateUtc" class="form-label"></label>
+        <input asp-for="DueDateUtc" class="form-control" />
+        <span asp-validation-for="DueDateUtc" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="IsCompleted" class="form-check-input" />
+        <label asp-for="IsCompleted" class="form-check-label"></label>
+    </div>
+
+    <button class="btn btn-success" type="submit">Save</button>
+    <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
 </form>
 
 @section Scripts {

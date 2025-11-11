@@ -1,36 +1,46 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using QuestBoard.Models;
 using QuestBoard.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
-builder.Services.AddDbContext<QuestBoardContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// SQLite; suppress PendingModelChanges warning for dev
+var cs = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=QuestBoard.db";
+builder.Services.AddDbContext<QuestBoardContext>(opt =>
+{
+    opt.UseSqlite(cs);
+    opt.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+});
 
-// Week 11: register the service with Scoped lifetime
+builder.Services.AddControllersWithViews();
+
+// ✅ DI registrations
+builder.Services.AddScoped<IQuestService, QuestService>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 
-// 3️⃣ Build the app AFTER services are registered
 var app = builder.Build();
 
-// 4️⃣ Optional logging
-var logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("Environment: {env}", app.Environment.EnvironmentName);
-
-// 5️⃣ Developer error page
-if (app.Environment.IsDevelopment())
+// Create schema and seed (no migrations required for dev)
+using (var scope = app.Services.CreateScope())
 {
-    app.UseDeveloperExceptionPage();
+    var db = scope.ServiceProvider.GetRequiredService<QuestBoardContext>();
+    await db.Database.EnsureCreatedAsync();
+    await SeedData.InitializeAsync(db);
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+
 app.UseStaticFiles();
 app.UseRouting();
 
-// 6️⃣ MVC route mapping
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Quests}/{action=Index}/{id?}");
 
 app.Run();

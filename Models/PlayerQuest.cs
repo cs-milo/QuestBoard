@@ -3,10 +3,12 @@
     public class PlayerQuest
     {
         public int PlayerId { get; set; }
-        public Player? Player { get; set; }
+        public Player Player { get; set; } = default!;
+
         public int QuestId { get; set; }
-        public Quest? Quest { get; set; }
-        public DateTime AcceptedAt { get; set; } = DateTime.UtcNow;
-        public bool IsCompleted { get; set; } = false;
+        public Quest Quest { get; set; } = default!;
+
+        public bool IsCompleted { get; set; }
+        public DateTime? CompletedUtc { get; set; }
     }
 }

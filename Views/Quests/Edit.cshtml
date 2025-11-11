@@ -1,53 +1,46 @@
-﻿@model QuestBoard.Models.Quest
-
+﻿@model QuestBoard.ViewModels.QuestEditViewModel
 @{
     ViewData["Title"] = "Edit Quest";
 }
+<h1>Edit Quest</h1>
 
-<h2>Edit Quest</h2>
-<hr />
+<form asp-action="Edit" method="post" novalidate>
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-<form asp-action="Edit" method="post">
-    @Html.AntiForgeryToken()
-
-    <div class="form-group">
-        <label asp-for="Title" class="control-label"></label>
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
         <input asp-for="Title" class="form-control" />
         <span asp-validation-for="Title" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="Description" class="control-label"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="RewardGold" class="control-label"></label>
-        <input asp-for="RewardGold" class="form-control" type="number" />
-        <span asp-validation-for="RewardGold" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="Difficulty" class="control-label"></label>
-        <input asp-for="Difficulty" class="form-control" />
-        <span asp-validation-for="Difficulty" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="GameId" class="control-label">Game</label>
-        <select asp-for="GameId" asp-items="@(ViewData["GameId"] as SelectList)" class="form-control"></select>
+    <div class="mb-3">
+        <label asp-for="GameId" class="form-label"></label>
+        <select asp-for="GameId" class="form-select" asp-items="Model.GameOptions"></select>
         <span asp-validation-for="GameId" class="text-danger"></span>
     </div>
 
-    <input type="hidden" asp-for="Id" />
+    <div class="mb-3">
+        <label asp-for="PlayerId" class="form-label"></label>
+        <select asp-for="PlayerId" class="form-select" asp-items="Model.PlayerOptions"></select>
+        <span asp-validation-for="PlayerId" class="text-danger"></span>
+    </div>
 
-    <button type="submit" class="btn btn-primary">Save</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    <div class="mb-3">
+        <label asp-for="DueDateUtc" class="form-label"></label>
+        <input asp-for="DueDateUtc" class="form-control" />
+        <span asp-validation-for="DueDateUtc" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="IsCompleted" class="form-check-input" />
+        <label asp-for="IsCompleted" class="form-check-label"></label>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
 </form>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
 }
