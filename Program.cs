@@ -1,7 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using QuestBoard.Models;
 using QuestBoard.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,13 +19,45 @@ builder.Services.AddDbContext<QuestBoardContext>(opt =>
 
 builder.Services.AddControllersWithViews();
 
+// Register health checks, including EF Core database dependency
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<QuestBoardContext>(
+        name: "database",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: new[] { "ready", "db" });
+
+
 // ✅ DI registrations
 builder.Services.AddScoped<IQuestService, QuestService>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 
 var app = builder.Build();
 
-// Create schema and seed (no migrations required for dev)
+
+app.MapHealthChecks("/healthz", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json; charset=utf-8";
+
+        var payload = new
+        {
+            status = report.Status.ToString(),
+            totalDurationMs = (int)report.TotalDuration.TotalMilliseconds,
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                durationMs = (int)e.Value.Duration.TotalMilliseconds
+            })
+        };
+
+        await context.Response.WriteAsync(
+            JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+    }
+});
+
+// Create schema and seed
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<QuestBoardContext>();
