@@ -23,6 +23,134 @@ Planning Table:
 
 ---
 
-### Week 10 Deliverable
-📘 **Entity Framework Core integration (model, DbContext, migration, and evidence):**  
-➡️ [Open the Week 10 README](README.week10.md)
+# Week 10 — Entity Framework Core Integration (QuestBoard)
+
+This update introduces a durable data layer for QuestBoard using Entity Framework Core and SQL Server LocalDB. The goal for Week 10 is narrow by design: define the domain model, register it in the application, create a migration that matches the model, and prove that the database builds and stores rows. The UI and extra features stay out of scope so the foundation is stable for later weeks.
+
+## What changed in Week 10
+
+- **Entities**
+  - **Game** — `Id, Name, Genre, CreatedAt`
+  - **Player** — `Id, Name, Class, Level, GameId` (each player belongs to one game)
+  - **Quest** — `Id, Title, Description, RewardGold, Difficulty, GameId` (each quest belongs to one game)
+  - **PlayerQuest** — join table for the many-to-many between players and quests (`PlayerId, QuestId, AcceptedAt, IsCompleted`)
+
+- **DbContext**
+  - `QuestBoardContext` exposes `DbSet<Game>`, `DbSet<Player>`, `DbSet<Quest>`, and `DbSet<PlayerQuest>`.
+  - Relationships configured in `OnModelCreating`:
+    - Composite primary key on `PlayerQuest (PlayerId, QuestId)`.
+    - `Game → Players` and `Game → Quests` use **Cascade**.
+    - `PlayerQuest → Player` and `PlayerQuest → Quest` use **Restrict/NoAction** to avoid SQL Server’s “multiple cascade paths” error.
+
+- **Migrations**
+  - A migration was created and applied to generate the four tables above.
+  - The database builds without errors; proof screenshots are included.
+
+## How to run locally
+
+1. Ensure the .NET SDK and Visual Studio (with ASP.NET workload) are installed.  
+2. The default connection string in `appsettings.json` targets LocalDB:  
+   `Server=(localdb)\\MSSQLLocalDB;Database=QuestBoardDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True`
+3. Build the schema:
+   - **Visual Studio:** *Tools → NuGet Package Manager → Package Manager Console* → `Update-Database`
+   - **or** terminal at the project folder: `dotnet ef database update`
+4. Start the app:
+   - **Visual Studio:** press **F5**
+   - **or** terminal: `dotnet run`
+5. Browse to `https://localhost:<port>/`. If you scaffolded CRUD, visit `/Games`, `/Players`, `/Quests` to create and view rows.
+
+## Verifying the database
+
+- **SQL Server Object Explorer** → `(localdb)\MSSQLLocalDB → Databases → QuestBoardDb → Tables`  
+- Right-click **Games**, **Players**, **Quests**, **PlayerQuests** → **View Data**.  
+- You should see actual values (not just null placeholders). Screenshots below capture the exact state used for submission.
+
+## Evidence (screenshots)
+
+- ![Migration Output](docs/week10/Wk10_MigrationOutput.png)
+- ![Games Data](docs/week10/Wk10_Games.png)
+- ![Players Data](docs/week10/Wk10_Players.png)
+- ![Quests Data](docs/week10/Wk10_Quests.png)
+
+## File pointers
+
+These filenames are present in the project:
+- **DbContext:** `QuestBoardContext.cs`
+- **Entities:** `Game.cs`, `Player.cs`, `Quest.cs`, `PlayerQuest.cs`
+- **Relationships & seeding:** inside `OnModelCreating` in `QuestBoardContext`
+- **Migrations:** files under the `Migrations` folder (initial schema + fixes)
+
+> Exact relative paths can vary by solution layout (for example, you might keep the app under `src/`); the filenames above are consistent.
+
+## Notes for later weeks
+
+The model is intentionally minimal. Future work can build on this layer by adding view models, services, and pages for assigning quests to players. Because the delete behavior was set deliberately (Cascade at Game, Restrict at the join), future changes won’t fight SQL Server’s multiple-cascade rule.
+
+## Submission links
+
+- **Repository (entities, DbContext, migration commits):** link to this branch/PR.  
+- **Week 10 README:** this file, `README.week10.md`, in the repository root.
+
+---
+## Week 11 – Separation of Concerns / Dependency Injection
+
+This week I implemented a service layer and integrated it via ASP.NET Core’s built-in Dependency Injection (DI) to separate non-UI logic from MVC controllers. The goal was to keep controllers thin and move data access and business logic into a dedicated service that can be reused and tested independently.
+
+I added an IPlayerService interface and a PlayerService implementation. The service encapsulates queries such as listing all players with their related Game, retrieving a single player with related Game and Quests, creating, updating, and deleting players, as well as a simple business method (GetTopByLevelAsync) that returns the top N players by level. The service uses the existing QuestBoardContext from Entity Framework Core and is registered with the DI container using AddScoped, which is the recommended lifetime for EF Core per-request usage.
+
+In PlayersController, I replaced direct data access with calls to the service, leaving UI-focused responsibilities (like populating dropdowns for Game selection) inside the controller. As a result, the controller methods are shorter, easier to read, and focused on HTTP + view concerns. The PlayerService centralizes data logic and query shape, which is better for maintainability and reduces duplication across the codebase.
+
+This pattern directly supports real-world needs: services can be unit tested with an in-memory database or mocked interfaces; swapping implementations (e.g., caching, auditing, or API-based data) becomes straightforward; and the controller remains stable as behavior evolves. The new /Players/Top endpoint demonstrates how adding features now primarily means extending the service rather than complicating the controller.
+
+How to verify:
+1) Run the app → Players.
+2) Click “Show Top 3 Players” or use the Top form.
+3) Create/Edit/Delete still work as before; data persists in SQL Server.
+
+Evidence:
+- Service: `Services/IPlayerService.cs`, `Services/PlayerService.cs`
+- DI: `Program.cs` (AddScoped)
+- Controller usage: `Controllers/PlayersController.cs`
+- UI Entry: `Views/Players/Index.cshtml`
+
+Screenshots:
+- ![Player Index](docs/week11/PlayerIndexCode.png)
+- ![Registration](docs/week11/RegistrationAdded.png)
+- ![Top N Players](docs/week11/Top3Proof.png)
+
+---
+
+### Week 12 – CRUD (Vertical Slice: Quests)
+
+This week I implemented a full CRUD slice for Quests using async EF Core, a service layer, and validation on create/edit. I added a QuestsController with Index (list), Details (read), Create, and Edit actions. The controller calls IQuestService, which performs async data access with ToListAsync, FirstOrDefaultAsync, and SaveChangesAsync. For forms, I used a QuestEditViewModel with data annotations so invalid input (missing title, missing game/player) shows validation messages and blocks the POST. The Create and Edit views include asp-validation-summary and asp-validation-for to surface errors cleanly.
+
+I kept the UI simple: Index lists quests with game, player, due date, and a quick link to Details/Edit. Create and Edit use dropdowns populated from Game and Player via the service. The service also logs a few basic actions so I can confirm the flow. This slice is intentionally narrow but complete end-to-end, which sets up Weeks 13–14 to add diagnostics and logging around the same path without changing the behavior.
+
+Acceptance Criteria
+- Async data access: ToListAsync / FirstOrDefaultAsync / SaveChangesAsync
+- Validation feedback appears on Create/Edit when inputs are invalid
+- List + Detail read paths work
+- At least one write action works (Create and Edit implemented)
+
+Evidence
+- Controller, services, view models, and views are in the repository under their folders
+- Screenshots of Create validation, Index list, and Details page (in /docs/week12/)
+- Commits linked from this section
+
+Test Plan
+- Try creating a quest without a Title; expect validation error
+- Create a valid quest; expect redirect to Details and success message
+- Edit the quest’s IsCompleted or DueDate; expect update to persist
+- Search in Index to confirm list filtering still works
+
+---
+
+### Week 13 – Health Checks
+
+For Week 13, the goal was to add a diagnostic health endpoint to the QuestBoard application and verify that the app can report its own readiness. This included creating a /healthz route and adding a real dependency check against the database. The endpoint needed to return simple JSON that helps with troubleshooting but does not expose any connection strings or other sensitive information. The /healthz endpoint now performs two checks:
+
+General application health
+
+Database connectivity check using the existing QuestBoardContext
+
+If the application can successfully communicate with the database, the endpoint returns Healthy. If the database is unreachable, it returns Unhealthy along with a short diagnostic message.
