@@ -154,3 +154,52 @@ General application health
 Database connectivity check using the existing QuestBoardContext
 
 If the application can successfully communicate with the database, the endpoint returns Healthy. If the database is unreachable, it returns Unhealthy along with a short diagnostic message.
+
+
+### Week 14 - Logging
+
+This week’s task was to implement structured logging throughout key execution paths in the QuestBoard application. The main goal was to make sure the app records useful information during normal operation as well as during error conditions. This helps when troubleshooting issues, and it mirrors what real production systems do to monitor behavior and diagnose failures.
+I added logs to two paths:
+
+1. A success path – when a quest is created successfully.
+2. An error or warning path – when the incoming model state is invalid or when a quest fails to load.
+
+What Was Implemented
+
+Added ILogger<QuestsController> through dependency injection.
+
+Wrote structured logs in:
+
+Create POST (success and validation failure)
+
+Index (request start)
+
+Edit GET (quest not found)
+
+Ensured logs include useful identifiers such as:
+
+Quest ID
+
+Title
+
+Correlation/request ID
+
+Search term when applicable
+
+
+Test Plan
+
+1. Run the app and open the Output window (Debug + ASP.NET Core logs).
+
+2. Create a new quest with valid input to verify the success log shows quest ID, title, and correlation ID.
+
+- ![Log](docs/week14/LogOutput.png)
+
+3. Attempt to create a quest with missing required fields to verify the warning log appears.
+
+4. Manually enter /Quests/Edit/9999 to verify the “quest not found” warning is logged.
+
+Screenshot:
+- ![Log](docs/week14/Warning.png)
+
+5. Confirm Index logs the “Quest Index requested” message each time the page loads.

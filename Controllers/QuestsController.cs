@@ -1,27 +1,39 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using QuestBoard.Models;
 using QuestBoard.Services;
 using QuestBoard.ViewModels;
-using System.Linq;
 
 namespace QuestBoard.Controllers
 {
     public class QuestsController : Controller
     {
         private readonly IQuestService _service;
+        private readonly ILogger<QuestsController> _logger;
         private readonly QuestBoardContext _db;
 
-        public QuestsController(IQuestService service, QuestBoardContext db)
+        public QuestsController(IQuestService service, QuestBoardContext db, ILogger<QuestsController> logger)
         {
             _service = service;
             _db = db;
+            _logger = logger;
         }
 
         // LIST
         public async Task<IActionResult> Index(string? search)
         {
+            var correlationId = HttpContext.TraceIdentifier;
+
+            _logger.LogInformation(
+                "Quest Index requested. Search={Search}, CorrelationId={CorrelationId}",
+                search,
+                correlationId);
+
             var list = await _service.GetListAsync(search);
 
             var vms = list.Select(x => new QuestListItemViewModel
@@ -44,12 +56,22 @@ namespace QuestBoard.Controllers
         // DETAILS
         public async Task<IActionResult> Details(int id)
         {
+            var correlationId = HttpContext.TraceIdentifier;
+
             var quest = await _db.Quests
                 .Include(q => q.Game)
                 .Include(q => q.PlayerQuests).ThenInclude(pq => pq.Player)
                 .FirstOrDefaultAsync(q => q.Id == id);
 
-            if (quest is null) return NotFound();
+            if (quest is null)
+            {
+                _logger.LogWarning(
+                    "Quest Details not found. QuestId={QuestId}, CorrelationId={CorrelationId}",
+                    id,
+                    correlationId);
+
+                return NotFound();
+            }
 
             var vm = new QuestDetailsViewModel
             {
@@ -61,54 +83,129 @@ namespace QuestBoard.Controllers
                 IsCompleted = quest.IsCompleted,
                 GameId = quest.GameId,
                 GameName = quest.Game?.Name,
-                GameTitle = quest.Game?.Name, // ✅ expected by view
+                GameTitle = quest.Game?.Name,
                 PlayerName = quest.PlayerQuests.Select(pq => pq.Player.Name).FirstOrDefault(),
                 PlayerNames = quest.PlayerQuests.Select(pq => pq.Player.Name).Distinct().ToList()
             };
 
+            _logger.LogInformation(
+                "Quest Details viewed. QuestId={QuestId}, CorrelationId={CorrelationId}",
+                id,
+                correlationId);
+
             return View(vm);
         }
 
-        // CREATE
+        // CREATE (GET) – now uses QuestEditViewModel
+        [HttpGet]
         public async Task<IActionResult> Create()
         {
+            var vm = new QuestEditViewModel
+            {
+                DueDateUtc = DateTime.UtcNow.AddDays(7),
+                IsCompleted = false
+            };
+
             await PopulateGamesSelectList();
             await PopulatePlayersSelectList();
-            return View(new Quest());
+
+            vm.GameOptions = (SelectList)ViewBag.Games;
+            vm.PlayerOptions = (SelectList)ViewBag.Players;
+
+            return View(vm);
         }
 
+        // CREATE (POST) – accepts QuestEditViewModel to match the view
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Quest quest, int? playerId)
+        public async Task<IActionResult> Create(QuestEditViewModel vm)
         {
+            var correlationId = HttpContext.TraceIdentifier;
+
             if (!ModelState.IsValid)
             {
-                await PopulateGamesSelectList(quest.GameId);
-                await PopulatePlayersSelectList(playerId);
-                return View(quest);
+                _logger.LogWarning(
+                    "Quest Create validation failed. CorrelationId={CorrelationId}",
+                    correlationId);
+
+                await PopulateGamesSelectList(vm.GameId);
+                await PopulatePlayersSelectList(vm.PlayerId);
+                vm.GameOptions = (SelectList)ViewBag.Games;
+                vm.PlayerOptions = (SelectList)ViewBag.Players;
+                return View(vm);
             }
 
-            await _service.CreateAsync(quest);
-
-            // If a player was chosen in the Create view, attach via join table
-            if (playerId.HasValue)
+            // Map VM -> entity
+            var quest = new Quest
             {
-                _db.PlayerQuests.Add(new PlayerQuest { PlayerId = playerId.Value, QuestId = quest.Id, IsCompleted = false });
-                await _db.SaveChangesAsync();
-            }
+                Title = vm.Title,
+                Name = vm.Name,
+                Description = vm.Description,
+                DueDateUtc = vm.DueDateUtc,
+                IsCompleted = vm.IsCompleted,
+                GameId = vm.GameId
+            };
 
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _service.CreateAsync(quest);
+
+                // Attach a player if one was selected
+                if (vm.PlayerId.HasValue)
+                {
+                    _db.PlayerQuests.Add(new PlayerQuest
+                    {
+                        PlayerId = vm.PlayerId.Value,
+                        QuestId = quest.Id,
+                        IsCompleted = quest.IsCompleted
+                    });
+                    await _db.SaveChangesAsync();
+                }
+
+                _logger.LogInformation(
+                    "Quest Create succeeded. QuestId={QuestId}, Title={Title}, CorrelationId={CorrelationId}",
+                    quest.Id,
+                    quest.Title,
+                    correlationId);
+
+                TempData["Status"] = "Quest created.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Quest Create failed with exception. CorrelationId={CorrelationId}",
+                    correlationId);
+
+                ModelState.AddModelError(string.Empty, "Unable to create quest right now.");
+                await PopulateGamesSelectList(vm.GameId);
+                await PopulatePlayersSelectList(vm.PlayerId);
+                vm.GameOptions = (SelectList)ViewBag.Games;
+                vm.PlayerOptions = (SelectList)ViewBag.Players;
+                return View(vm);
+            }
         }
 
-        // EDIT (GET) -> View expects QuestEditViewModel with dropdowns
+        // EDIT (GET)
         public async Task<IActionResult> Edit(int id)
         {
+            var correlationId = HttpContext.TraceIdentifier;
+
             var quest = await _db.Quests
                 .Include(q => q.Game)
                 .Include(q => q.PlayerQuests).ThenInclude(pq => pq.Player)
                 .FirstOrDefaultAsync(q => q.Id == id);
 
-            if (quest is null) return NotFound();
+            if (quest is null)
+            {
+                _logger.LogWarning(
+                    "Quest Edit GET not found. QuestId={QuestId}, CorrelationId={CorrelationId}",
+                    id,
+                    correlationId);
+
+                return NotFound();
+            }
 
             var vm = new QuestEditViewModel
             {
@@ -120,29 +217,43 @@ namespace QuestBoard.Controllers
                 IsCompleted = quest.IsCompleted,
                 GameId = quest.GameId,
                 GameTitle = quest.Game?.Name,
-                // pick a representative PlayerId if any
                 PlayerId = quest.PlayerQuests.Select(pq => (int?)pq.PlayerId).FirstOrDefault()
             };
 
             await PopulateGamesSelectList(vm.GameId);
             await PopulatePlayersSelectList(vm.PlayerId);
 
-            // attach SelectLists to VM (what your view is binding to)
             vm.GameOptions = (SelectList)ViewBag.Games;
             vm.PlayerOptions = (SelectList)ViewBag.Players;
 
             return View(vm);
         }
 
-        // EDIT (POST) -> accept VM, map back to entity
+        // EDIT (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, QuestEditViewModel vm)
         {
-            if (id != vm.Id) return BadRequest();
+            var correlationId = HttpContext.TraceIdentifier;
+
+            if (id != vm.Id)
+            {
+                _logger.LogWarning(
+                    "Quest Edit id mismatch. RouteId={RouteId}, ModelId={ModelId}, CorrelationId={CorrelationId}",
+                    id,
+                    vm.Id,
+                    correlationId);
+
+                return BadRequest();
+            }
 
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning(
+                    "Quest Edit validation failed. QuestId={QuestId}, CorrelationId={CorrelationId}",
+                    vm.Id,
+                    correlationId);
+
                 await PopulateGamesSelectList(vm.GameId);
                 await PopulatePlayersSelectList(vm.PlayerId);
                 vm.GameOptions = (SelectList)ViewBag.Games;
@@ -153,7 +264,16 @@ namespace QuestBoard.Controllers
             var quest = await _db.Quests
                 .Include(q => q.PlayerQuests)
                 .FirstOrDefaultAsync(q => q.Id == id);
-            if (quest is null) return NotFound();
+
+            if (quest is null)
+            {
+                _logger.LogWarning(
+                    "Quest Edit entity not found. QuestId={QuestId}, CorrelationId={CorrelationId}",
+                    id,
+                    correlationId);
+
+                return NotFound();
+            }
 
             quest.Title = vm.Title;
             quest.Name = vm.Name;
@@ -162,13 +282,11 @@ namespace QuestBoard.Controllers
             quest.IsCompleted = vm.IsCompleted;
             quest.GameId = vm.GameId;
 
-            // Maintain a single Player link if the view is using a single selection
             if (vm.PlayerId.HasValue)
             {
                 var existing = quest.PlayerQuests.FirstOrDefault(pq => pq.PlayerId == vm.PlayerId.Value);
                 if (existing == null)
                 {
-                    // remove other links if you want strictly single selection
                     quest.PlayerQuests.Clear();
                     quest.PlayerQuests.Add(new PlayerQuest
                     {
@@ -180,12 +298,37 @@ namespace QuestBoard.Controllers
             }
             else
             {
-                // if none selected, clear associations (optional; matches single-select UX)
                 quest.PlayerQuests.Clear();
             }
 
-            await _service.UpdateAsync(quest);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _service.UpdateAsync(quest);
+
+                _logger.LogInformation(
+                    "Quest Edit succeeded. QuestId={QuestId}, Title={Title}, CorrelationId={CorrelationId}",
+                    quest.Id,
+                    quest.Title,
+                    correlationId);
+
+                TempData["Status"] = "Quest updated.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Quest Edit failed with exception. QuestId={QuestId}, CorrelationId={CorrelationId}",
+                    quest.Id,
+                    correlationId);
+
+                ModelState.AddModelError(string.Empty, "Unable to save quest changes right now.");
+                await PopulateGamesSelectList(vm.GameId);
+                await PopulatePlayersSelectList(vm.PlayerId);
+                vm.GameOptions = (SelectList)ViewBag.Games;
+                vm.PlayerOptions = (SelectList)ViewBag.Players;
+                return View(vm);
+            }
         }
 
         // DELETE
@@ -193,7 +336,30 @@ namespace QuestBoard.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            await _service.DeleteAsync(id);
+            var correlationId = HttpContext.TraceIdentifier;
+
+            try
+            {
+                await _service.DeleteAsync(id);
+
+                _logger.LogInformation(
+                    "Quest Delete succeeded. QuestId={QuestId}, CorrelationId={CorrelationId}",
+                    id,
+                    correlationId);
+
+                TempData["Status"] = "Quest deleted.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Quest Delete failed with exception. QuestId={QuestId}, CorrelationId={CorrelationId}",
+                    id,
+                    correlationId);
+
+                TempData["Status"] = "Unable to delete quest right now.";
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
