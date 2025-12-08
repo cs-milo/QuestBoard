@@ -27,8 +27,6 @@ Planning Table:
 
 This update introduces a durable data layer for QuestBoard using Entity Framework Core and SQL Server LocalDB. The goal for Week 10 is narrow by design: define the domain model, register it in the application, create a migration that matches the model, and prove that the database builds and stores rows. The UI and extra features stay out of scope so the foundation is stable for later weeks.
 
-## What changed in Week 10
-
 - **Entities**
   - **Game** — `Id, Name, Genre, CreatedAt`
   - **Player** — `Id, Name, Class, Level, GameId` (each player belongs to one game)
@@ -203,3 +201,19 @@ Screenshot:
 - ![Log](docs/week14/Warning.png)
 
 5. Confirm Index logs the “Quest Index requested” message each time the page loads.
+
+
+### Week 15 – Stored Procedures
+
+This week focused on adding stored procedure support to the QuestBoard project. The first task was writing a SQL stored procedure that returns “open quests” filtered by GameId. Because SQLite is used for local development, and SQLite does not support stored procedures or the EXEC keyword, the SQL script was written specifically for SQL Server and committed to the repository. The procedure selects a filtered set of quests and orders them by difficulty and Id. The script compiles without errors in SQL Server and is ready for use when the app is connected to a SQL Server instance.
+
+Next, the OpenByGame action in QuestsController was updated to support both SQLite and SQL Server. The controller now checks the EF Core provider at runtime. If SQLite is detected, the code uses a LINQ query instead of attempting to execute the stored procedure. If SQL Server is detected, the controller uses FromSqlInterpolated() to safely pass the GameId parameter and execute the stored procedure. This prevents SQLite from throwing syntax errors while still meeting the assignment requirement to call a stored procedure when supported.
+
+The results from either path are projected into QuestListItemViewModel and rendered through the existing Razor view. Additional logging was added to record success and error cases, including the provider name and correlation ID, making troubleshooting much easier.
+
+Testing involved opening the route /Quests/OpenByGame?gameId=X, checking that the page renders correctly, and confirming that logs show the correct execution path (SQLite fallback or SQL Server stored procedure). The SQL script (Week15_GetOpenQuestsForGame.sql) is included in the repository under /SQL/.
+
+Screenshots:
+- ![Log](docs/week15/SQLQueryOutput.png)
+
+- ![Log](docs/week15/OpenQuests.png)

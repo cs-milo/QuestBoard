@@ -362,6 +362,80 @@ namespace QuestBoard.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        // WEEK 15: call stored procedure to list open quests for a given game
+        public async Task<IActionResult> OpenByGame(int gameId)
+        {
+            var correlationId = HttpContext.TraceIdentifier;
+
+            try
+            {
+                // Detect provider at runtime (SQLite vs SQL Server, etc.)
+                var provider = _db.Database.ProviderName ?? string.Empty;
+
+                List<Quest> quests;
+
+                if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+                {
+                    quests = await _db.Quests
+                        .Where(q => q.GameId == gameId)
+                        .AsNoTracking()
+                        .ToListAsync();
+                }
+                else
+                {
+                    quests = await _db.Quests
+                        .FromSqlInterpolated($"EXEC dbo.GetOpenQuestsForGame @GameId={gameId}")
+                        .AsNoTracking()
+                        .ToListAsync();
+                }
+
+                // Load game names
+                var gameIds = quests.Select(q => q.GameId).Distinct().ToList();
+
+                var gamesLookup = await _db.Games
+                    .Where(g => gameIds.Contains(g.Id))
+                    .ToDictionaryAsync(g => g.Id, g => g.Name);
+
+                var vms = quests.Select(q => new QuestListItemViewModel
+                {
+                    Id = q.Id,
+                    Title = q.Title,
+                    Name = q.Name,
+                    Description = q.Description,
+                    DueDateUtc = q.DueDateUtc,
+                    IsCompleted = q.IsCompleted,
+                    GameName = q.GameId.HasValue && gamesLookup.TryGetValue(q.GameId.Value, out var name)
+                        ? name
+                        : null,
+                    GameTitle = q.GameId.HasValue && gamesLookup.TryGetValue(q.GameId.Value, out var title)
+                        ? title
+                        : null,
+                    PlayerName = null 
+                }).ToList();
+
+                _logger.LogInformation(
+                    "OpenByGame succeeded. GameId={GameId}, Count={Count}, Provider={Provider}, CorrelationId={CorrelationId}",
+                    gameId,
+                    vms.Count,
+                    provider,
+                    correlationId);
+
+                ViewBag.GameId = gameId;
+                return View(vms);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "OpenByGame failed. GameId={GameId}, CorrelationId={CorrelationId}",
+                    gameId,
+                    correlationId);
+
+                // No secrets to the user, details go to logs instead
+                return StatusCode(500);
+            }
+        }
+
 
         // Helpers for dropdowns
         private async Task PopulateGamesSelectList(int? selectedGameId = null)

@@ -61,5 +61,13 @@ namespace QuestBoard.Services
             await _db.SaveChangesAsync();
             return true;
         }
+        public async Task<List<Quest>> GetOpenQuestsForGameAsync(int gameId)
+        {
+            return await _db.Quests
+                .FromSqlInterpolated($"EXEC dbo.GetOpenQuestsForGame @GameId = {gameId}")
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
     }
 }

@@ -1,0 +1,45 @@
+﻿@model IEnumerable<QuestBoard.ViewModels.QuestListItemViewModel>
+
+@{
+    ViewData["Title"] = "Open Quests For Game";
+    var gameId = ViewBag.GameId as int?; 
+}
+
+<h1>Open Quests</h1>
+
+@if (gameId.HasValue)
+{
+    <p>Showing open quests for Game Id: <strong>@gameId.Value</strong></p>
+}
+
+@if (!Model.Any())
+{
+    <p>No open quests found for this game.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Quest Name</th>
+                <th>Game</th>
+                <th>Due Date (UTC)</th>
+                <th>Completed?</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var quest in Model)
+        {
+            <tr>
+                <td>@quest.Title</td>
+                <td>@quest.Name</td>
+                <td>@quest.GameName</td>
+                <td>@quest.DueDateUtc</td>
+
+                <td>@(quest.IsCompleted ? "Yes" : "No")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
