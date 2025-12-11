@@ -217,3 +217,34 @@ Screenshots:
 - ![Log](docs/week15/SQLQueryOutput.png)
 
 - ![Log](docs/week15/OpenQuests.png)
+
+
+## Week 16 (Final) – Deployment (Azure App Service)
+
+For the final feature, I deployed QuestBoard to Azure App Service.
+
+- Hosting: Azure App Service, .NET 9 runtime, Free (F1) tier. Free trial subscription used; app may not work after Dec 2027.
+- URL: https://questboard-f6a2augcawesfjf2.canadacentral-01.azurewebsites.net
+
+- ![Log](docs/week16/Main.png)
+
+- Health: https://questboard-f6a2augcawesfjf2.canadacentral-01.azurewebsites.net/healthz returns “OK” and checks basic app readiness.
+
+- ![Log](docs/week16/HealthzConfirmation.png)
+
+### Configuration and secrets
+
+- The app reads its database connection string from `ConnectionStrings:QuestBoardDb`.
+- In development, this uses a local SQLite database via `appsettings.Development.json`.
+- The code uses the same `QuestBoardContext` and `UseSqlite` configuration in both environments.
+
+### What I tested
+
+- Loaded the root page on Azure and confirmed the layout and basic navigation work.
+- Hit `/healthz` and verified it returned an OK message instead of a 500.
+- Opened the Games page and confirmed details render correctly using the database.
+- Triggered the stored-procedure-backed feature (`/Quests/OpenByGame?gameId=1`) and verified it returns a filtered list without errors.
+
+Additional Test Pages:
+- ![Log](docs/week16/GamesPage.png)
+- ![Log](docs/week16/HomePage.png))

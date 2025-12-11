@@ -7,12 +7,6 @@
 	  <UserSecretsId>85ef1e96-0046-441e-824d-29a6488b8944</UserSecretsId>
   </PropertyGroup>
 	<ItemGroup>
-	  <Compile Remove="docs\NewFolder\**" />
-	  <Content Remove="docs\NewFolder\**" />
-	  <EmbeddedResource Remove="docs\NewFolder\**" />
-	  <None Remove="docs\NewFolder\**" />
-	</ItemGroup>
-	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
